@@ -1,5 +1,5 @@
 import { spawn, type SpawnOptions } from 'node:child_process'
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { spawnProcess } from '@orca/process-host'
 import type { ProcessSpec } from '@orca/process-host/process-spec'
 import {
@@ -188,7 +188,12 @@ async function serveWithSelectedRuntime(
       return refusal
     }
     process.stderr.write(`[serve] running on orcad ${selection.version}\n`)
-    return serveWithOrcad(selection, args, userDataPath, stripElectronRunAsNode(process.env))
+    return serveWithOrcad(
+      selection,
+      args,
+      userDataPath,
+      withWebClientRoot(stripElectronRunAsNode(process.env))
+    )
   }
   if (selection.reason) {
     process.stderr.write(`[serve] using Electron serve: ${selection.reason}\n`)
@@ -294,6 +299,13 @@ export function getExecutableAppArgs(executable: string): string[] {
 
 function getExecutableSpawnOptions(executable: string): Pick<SpawnOptions, 'shell'> {
   return process.platform === 'win32' && /\.(?:cmd|bat)$/i.test(executable) ? { shell: true } : {}
+}
+
+/** Why: the orcad slot ships without the web bundle, so point orcad at the app's own `out/web`. */
+function withWebClientRoot(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return env.ORCA_WEB_CLIENT_ROOT
+    ? env
+    : { ...env, ORCA_WEB_CLIENT_ROOT: join(resolveAppRoot(), 'out', 'web') }
 }
 
 export function resolveAppRoot(): string {

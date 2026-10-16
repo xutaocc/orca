@@ -13,7 +13,11 @@
 import process from 'node:process'
 import { getAppEnvironment } from '../../shared/app-environment'
 import type { ServeReadiness } from '../server/serve-readiness'
-import { resolveOrcadInstallRoot, resolveUserDataPath } from './orcad-app-paths'
+import {
+  resolveOrcadInstallRoot,
+  resolveOrcadWebClientRoot,
+  resolveUserDataPath
+} from './orcad-app-paths'
 import { prepareOrcadCliLauncher } from './orcad-cli-launcher'
 import { installOrcadHostAdapters, runOrcadQuitHandlers } from './orcad-host-adapters'
 import { describeOrcadBindExposure, resolveOrcadBindHost } from './orcad-bind-address'
@@ -296,7 +300,8 @@ async function startOrcadRuntime(
     // once a device has connected, so a loopback deployment would silently go wide one
     // restart after its first client paired.
     pinnedBindHost: bindHost,
-    ...(options.port !== undefined ? { wsPort: options.port, preferPinnedWsPort: true } : {})
+    ...(options.port !== undefined ? { wsPort: options.port, preferPinnedWsPort: true } : {}),
+    webClientRoot: resolveOrcadWebClientRoot()
   })
   // Stops first: no RPC may write while the rest of the runtime is torn down.
   registerCleanup(() => rpc.stop())

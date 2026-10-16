@@ -7,6 +7,7 @@
  * beside, or resolves resources against. The failure surfaces far from here, as a missing
  * file rather than a missing implementation.
  */
+import { existsSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
@@ -26,6 +27,17 @@ export function resolveUserDataPath(): string {
   }
   const xdg = env('XDG_DATA_HOME')
   return xdg ? join(xdg, 'Orca') : join(homedir(), '.orca')
+}
+
+/**
+ * The browser client bundle orcad serves over its WebSocket port, or undefined to serve none.
+ *
+ * Why an env var and not a path beside orcad.js: the orcad slot ships without the web bundle,
+ * so the launcher (or operator) names the `out/web` it built.
+ */
+export function resolveOrcadWebClientRoot(): string | undefined {
+  const explicit = env('ORCA_WEB_CLIENT_ROOT')
+  return explicit && existsSync(join(explicit, 'web-index.html')) ? explicit : undefined
 }
 
 /** Electron's `'appData'` definition, computed without Electron. */
