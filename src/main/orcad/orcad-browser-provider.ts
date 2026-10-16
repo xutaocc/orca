@@ -102,6 +102,10 @@ export function installedElectronCandidates(
 
 /** Only paths with stable installer ownership qualify; never guess arbitrary AppImage locations. */
 export async function resolveInstalledElectronExecutable(): Promise<string | null> {
+  // Why: an Electron-free host opts out so ORCA_BROWSER_EXECUTABLE (or nothing) is used instead.
+  if (process.env.ORCA_ORCAD_NO_ELECTRON === '1') {
+    return null
+  }
   const candidates = installedElectronCandidates(process.platform, homedir(), process.env)
   for (const candidate of candidates) {
     if (await executableExists(candidate)) {
