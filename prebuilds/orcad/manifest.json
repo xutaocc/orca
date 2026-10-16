@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 2,
+  "module": "node-pty",
+  "version": "1.1.0",
+  "napi": 8,
+  "nodeHeaders": "24.21.0",
+  "slots": {
+    "darwin-arm64": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "libc": "none",
+      "glibc": null,
+      "napi": 8,
+      "files": {
+        "pty.node": "cfcd010c924135484b9ffa402d672ae991d713d815889d96455769260dd20d80",
+        "spawn-helper": "005e4b7285a9e11231b730962003c176c41c0f1c138b81f8a566815c810ce66a"
+      }
+    },
+    "darwin-x64": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "libc": "none",
+      "glibc": null,
+      "napi": 8,
+      "files": {
+        "pty.node": "1e0f114a98abb37254659758a2e4ed7c0c2e8363655fd4d58bc2354fae2ddefc",
+        "spawn-helper": "41f5ccabfd9cfecb9a519966a94abf343b45017c476e5a75a889308b0d9e9a77"
+      }
+    }
+  }
+}

@@ -46,7 +46,9 @@ allowBuilds:
   electron-winstaller: false
   esbuild: true
   msw: false
-  node-pty: true
+  # Why off: the web server runs node-pty from orcad's committed prebuilds (prebuilds/orcad),
+  # so installs need no C/C++ toolchain.
+  node-pty: false
   sherpa-onnx: true
   ssh2: false
   '@orca/windows-registry': false
