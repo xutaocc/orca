@@ -8,7 +8,7 @@ import {
   type RuntimeHostDescriptor
 } from '../../../shared/runtime-host-descriptor'
 import { classifyRuntimeHostRePair } from '../../../shared/runtime-host-pairing-identity'
-import type { WebPairingOffer } from './web-pairing'
+import { followPageHostEndpoint, type WebPairingOffer } from './web-pairing'
 import { readWebDeviceKeySupport } from './web-device-key-support'
 import { MIGRATED_DEVICE_TOKEN_PREFIX } from './web-runtime-credential-source'
 import { createBrowserUuid } from '@/lib/browser-uuid'
@@ -210,7 +210,11 @@ export function getPreferredWebRuntimeConnection(
     throw new Error('No runtime endpoint is stored for this web client.')
   }
   return pairedRuntimeConnectionFromOffer({
-    endpoint: endpoint.endpoint,
+    // Reloaded from another address (LAN, Tailscale…): dial that one, not the paired host.
+    endpoint:
+      typeof window === 'undefined'
+        ? endpoint.endpoint
+        : followPageHostEndpoint(endpoint.endpoint, window.location),
     deviceToken: endpoint.deviceToken,
     publicKeyB64: endpoint.publicKeyB64,
     pairedDeviceId: environment.pairedDeviceId

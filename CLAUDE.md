@@ -31,7 +31,7 @@ pnpm run check:code-quality:changed  # changed-lines lint gate (full `pnpm lint`
 pnpm format                        # oxfmt
 ```
 
-`serve-web.sh` sets `ORCA_ORCAD_NO_ELECTRON=1`, `ORCA_WEB_CLIENT_ROOT=out/web` and `ORCA_ALLOW_INSECURE_WEB_PAIRING=1` (allows pairing from `http://<LAN IP>`), and auto-detects Chrome/Edge for the agent browser (`ORCA_BROWSER_EXECUTABLE`). It is a bash script with macOS/Linux LAN-IP detection; `serve-web.ps1` is the Windows equivalent. orcad prints a `Web client URL:` with a `#pairing=` fragment — open that exact URL; the bare page has no credentials.
+`serve-web.sh` sets `ORCA_ORCAD_NO_ELECTRON=1`, `ORCA_WEB_CLIENT_ROOT=out/web` and `ORCA_ALLOW_INSECURE_WEB_PAIRING=1` (allows pairing from `http://<LAN IP>`), and auto-detects Chrome/Edge for the agent browser (`ORCA_BROWSER_EXECUTABLE`). It is a bash script with macOS/Linux LAN-IP detection; `serve-web.ps1` is the Windows equivalent. orcad prints a `Web client URL:` with a `#pairing=` fragment — open that exact URL; the bare page has no credentials. The web client dials back whichever host served the page (`followPageHostEndpoint` in `src/renderer/src/web/web-pairing.ts`), so the same link works with any of the machine's addresses (LAN, Tailscale, ZeroTier) or behind an https proxy.
 
 ### Building on Windows
 

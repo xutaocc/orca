@@ -1,8 +1,9 @@
 # Windows counterpart of serve-web.sh: orcad on its pinned Node plus the browser client.
 # Build first:  pnpm install --ignore-scripts && pnpm run build:web-server
 #   $env:PORT          listen port            (default 6800)
-#   $env:BIND          listen address         (default 0.0.0.0, reachable from the LAN)
-#   $env:PAIRING_HOST  address clients dial   (default: this machine's LAN IP)
+#   $env:BIND          listen address         (default 0.0.0.0: every interface, incl. Tailscale/ZeroTier)
+#   $env:PAIRING_HOST  address in the printed link (default: this machine's LAN IP); the page
+#                      dials back whichever address it was opened through, so any host works
 #   $env:ORCA_USER_DATA                       data dir (default ~/.orca-server-dev)
 #   $env:ORCA_ALLOW_INSECURE_WEB_PAIRING      1 = allow pairing from http://<LAN IP> pages (default 1)
 #   $env:ORCA_BROWSER_EXECUTABLE              Chromium for the agent browser (default: Chrome/Edge if installed)
@@ -46,5 +47,26 @@ if (-not $env:ORCA_BROWSER_EXECUTABLE) {
 }
 New-Item -ItemType Directory -Force -Path $env:ORCA_USER_DATA | Out-Null
 
-& $runtime.FullName out/orcad/orcad-server.js --port $port --bind $bind --pairing-address $pairingHost @args
+# The web client dials back whatever address served the page, so the printed link works with any
+# of this machine's addresses (LAN, VM networks, Tailscale/ZeroTier, a hostname): swap the host.
+function Write-AnyAddressHint([string]$line) {
+  if ($bind -ne '0.0.0.0' -or $line -notmatch '^Web client URL: http://[^/]+(/.*)$') { return }
+  $rest = $Matches[1]
+  Write-Host ''
+  Write-Host 'Any address of this machine works (LAN, VM networks, Tailscale/ZeroTier, a hostname):'
+  $ips = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+      Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
+      Select-Object -ExpandProperty IPAddress)
+  foreach ($ip in $ips) { Write-Host "  http://${ip}:$port$rest" }
+  Write-Host ''
+}
+
+# Native stderr lines arrive as error records; they must not stop the script.
+$ErrorActionPreference = 'Continue'
+& $runtime.FullName out/orcad/orcad-server.js --port $port --bind $bind --pairing-address $pairingHost @args 2>&1 |
+  ForEach-Object {
+    $line = "$_"
+    Write-Host $line
+    Write-AnyAddressHint $line
+  }
 exit $LASTEXITCODE

@@ -21,21 +21,66 @@ export type WebPairingStartupDecision =
   | { kind: 'show-connect'; initialPairingInput: string | null }
   | { kind: 'use-stored-environment' }
 
-export function parseWebPairingInput(input: string): WebPairingOffer | null {
+export function parseWebPairingInput(
+  input: string,
+  page: PageAddress | null = currentPageAddress()
+): WebPairingOffer | null {
   const trimmed = input.trim()
   if (!trimmed) {
     return null
   }
 
   try {
-    if (trimmed.toLowerCase().startsWith('orca://')) {
-      const code = extractPairingCodeFromUrl(trimmed)
-      return code ? decodePairingPayload(code) : null
-    }
-    return decodePairingPayload(trimmed)
+    const offer = trimmed.toLowerCase().startsWith('orca://')
+      ? decodeCodeFromUrl(trimmed)
+      : decodePairingPayload(trimmed)
+    return offer && page ? followPageHost(offer, page) : offer
   } catch {
     return null
   }
+}
+
+function decodeCodeFromUrl(url: string): WebPairingOffer | null {
+  const code = extractPairingCodeFromUrl(url)
+  return code ? decodePairingPayload(code) : null
+}
+
+export type PageAddress = Pick<Location, 'protocol' | 'hostname' | 'port'>
+
+function currentPageAddress(): PageAddress | null {
+  return typeof window === 'undefined' ? null : window.location
+}
+
+/**
+ * Fork note (web server): the offer names one host address, but the page may be reached through
+ * any of the server's addresses (LAN, Tailscale, ZeroTier, a hostname) or an https proxy. When
+ * orcad served this page itself (same port, http) or a proxy did (https), dial back the page host.
+ */
+export function followPageHost(offer: WebPairingOffer, page: PageAddress): WebPairingOffer {
+  const endpoint = followPageHostEndpoint(offer.endpoint, page)
+  return endpoint === offer.endpoint ? offer : { ...offer, endpoint }
+}
+
+export function followPageHostEndpoint(endpoint: string, page: PageAddress): string {
+  let url: URL
+  try {
+    url = new URL(endpoint)
+  } catch {
+    return endpoint
+  }
+  if (page.hostname.length === 0 || (url.pathname !== '/' && url.pathname !== '')) {
+    return endpoint
+  }
+  // An https page (e.g. `tailscale serve`) can never dial ws://, so the proxy in front of it is the only route.
+  if (page.protocol === 'https:' && url.protocol === 'ws:') {
+    return `wss://${page.hostname}${page.port ? `:${page.port}` : ''}`
+  }
+  const servedByEndpoint = url.protocol === 'ws:' && page.protocol === 'http:' && url.port === page.port
+  if (!servedByEndpoint || url.hostname === page.hostname) {
+    return endpoint
+  }
+  url.hostname = page.hostname
+  return url.toString().replace(/\/$/, '')
 }
 
 export function readPairingInputFromLocation(location: Location): string | null {

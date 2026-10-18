@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { decideWebPairingStartup, parseWebPairingInput, type WebPairingOffer } from './web-pairing'
+import {
+  decideWebPairingStartup,
+  followPageHost,
+  parseWebPairingInput,
+  type WebPairingOffer
+} from './web-pairing'
 
 describe('web pairing input', () => {
   const offer: WebPairingOffer = {
@@ -103,6 +108,50 @@ describe('web pairing input', () => {
       decideWebPairingStartup({ initialPairingInput: 'not a code', hasStoredEnvironment: true })
     ).toEqual({
       kind: 'use-stored-environment'
+    })
+  })
+})
+
+describe('followPageHost', () => {
+  const lanOffer: WebPairingOffer = {
+    v: 2,
+    endpoint: 'ws://192.168.66.192:6800',
+    deviceToken: 'token',
+    publicKeyB64: 'public-key'
+  }
+  const page = (hostname: string, port = '6800', protocol = 'http:') => ({
+    protocol,
+    hostname,
+    port
+  })
+
+  it.each(['100.101.102.103', 'my-pc.tail1234.ts.net', '10.147.17.5', '192.168.233.1'])(
+    'dials the address the page was opened through (%s)',
+    (hostname) => {
+      expect(followPageHost(lanOffer, page(hostname)).endpoint).toBe(`ws://${hostname}:6800`)
+    }
+  )
+
+  it('keeps the offer when the page was not served by that endpoint', () => {
+    expect(followPageHost(lanOffer, page('100.101.102.103', '5173'))).toBe(lanOffer)
+    const proxied = { ...lanOffer, endpoint: 'wss://proxy.example/orca/runtime' }
+    expect(followPageHost(proxied, page('other.example', '', 'https:'))).toBe(proxied)
+  })
+
+  it('dials the https proxy that served the page (tailscale serve)', () => {
+    expect(followPageHost(lanOffer, page('my-pc.tail1234.ts.net', '', 'https:')).endpoint).toBe(
+      'wss://my-pc.tail1234.ts.net'
+    )
+    expect(followPageHost(lanOffer, page('my-pc.tail1234.ts.net', '8443', 'https:')).endpoint).toBe(
+      'wss://my-pc.tail1234.ts.net:8443'
+    )
+  })
+
+  it('rewrites the parsed offer when given the page address', () => {
+    const code = Buffer.from(JSON.stringify(lanOffer), 'utf-8').toString('base64url')
+    expect(parseWebPairingInput(`orca://pair?code=${code}`, page('100.64.0.7'))).toEqual({
+      ...lanOffer,
+      endpoint: 'ws://100.64.0.7:6800'
     })
   })
 })
