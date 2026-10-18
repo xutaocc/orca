@@ -4,6 +4,8 @@
 #   $env:BIND          listen address         (default 0.0.0.0: every interface, incl. Tailscale/ZeroTier)
 #   $env:PAIRING_HOST  address in the printed link (default: this machine's LAN IP); the page
 #                      dials back whichever address it was opened through, so any host works
+#   $env:ORCA_TOKEN    fixed web access token for http://<address>:<port>/?token=<token>
+#                      (default: a random one, kept across restarts)
 #   $env:ORCA_USER_DATA                       data dir (default ~/.orca-server-dev)
 #   $env:ORCA_ALLOW_INSECURE_WEB_PAIRING      1 = allow pairing from http://<LAN IP> pages (default 1)
 #   $env:ORCA_BROWSER_EXECUTABLE              Chromium for the agent browser (default: Chrome/Edge if installed)
@@ -47,17 +49,17 @@ if (-not $env:ORCA_BROWSER_EXECUTABLE) {
 }
 New-Item -ItemType Directory -Force -Path $env:ORCA_USER_DATA | Out-Null
 
-# The web client dials back whatever address served the page, so the printed link works with any
-# of this machine's addresses (LAN, VM networks, Tailscale/ZeroTier, a hostname): swap the host.
+# The web client dials back whatever address served the page, so the token works with any of this
+# machine's addresses (LAN, VM networks, Tailscale/ZeroTier, a hostname).
 function Write-AnyAddressHint([string]$line) {
-  if ($bind -ne '0.0.0.0' -or $line -notmatch '^Web client URL: http://[^/]+(/.*)$') { return }
-  $rest = $Matches[1]
+  if ($bind -ne '0.0.0.0' -or $line -notmatch '^Web access token: (.+)$') { return }
+  $token = $Matches[1].Trim()
   Write-Host ''
-  Write-Host 'Any address of this machine works (LAN, VM networks, Tailscale/ZeroTier, a hostname):'
+  Write-Host 'Open on any address of this machine (or open http://<address>:<port>/ and type the token):'
   $ips = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
       Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
       Select-Object -ExpandProperty IPAddress)
-  foreach ($ip in $ips) { Write-Host "  http://${ip}:$port$rest" }
+  foreach ($ip in $ips) { Write-Host "  http://${ip}:$port/?token=$token" }
   Write-Host ''
 }
 

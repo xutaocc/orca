@@ -9,8 +9,10 @@ import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/R
 import {
   clearPairingInputFromAddressBar,
   decideWebPairingStartup,
-  readPairingInputFromLocation
+  readPairingInputFromLocation,
+  type WebPairingStartupDecision
 } from './web-pairing'
+import { readWebAccessTokenFromLocation } from './web-access-token'
 import {
   createStoredWebRuntimeEnvironment,
   readStoredWebRuntimeEnvironment,
@@ -28,14 +30,21 @@ import.meta.hot?.dispose(disposeOsFileDropGuard)
 const App = lazy(() => import('../App'))
 
 function WebRoot(): React.JSX.Element {
-  const initialPairingInput = useMemo(() => readPairingInputFromLocation(window.location), [])
+  // Fork (web server): `/?token=…` pairs through the connect screen, which verifies the token.
+  const accessToken = useMemo(() => readWebAccessTokenFromLocation(window.location), [])
+  const initialPairingInput = useMemo(
+    () => accessToken ?? readPairingInputFromLocation(window.location),
+    [accessToken]
+  )
   // Why: current runtime links carry scope metadata. Runtime-scope offers keep
   // the instant save path; mobile/legacy-unknown offers must be shown/probed.
   const startupDecision = useMemo(() => {
-    const decision = decideWebPairingStartup({
-      initialPairingInput,
-      hasStoredEnvironment: readStoredWebRuntimeEnvironment() !== null
-    })
+    const decision: WebPairingStartupDecision = accessToken
+      ? { kind: 'show-connect', initialPairingInput: accessToken }
+      : decideWebPairingStartup({
+          initialPairingInput,
+          hasStoredEnvironment: readStoredWebRuntimeEnvironment() !== null
+        })
     if (
       decision.kind === 'auto-save-runtime-offer' ||
       (decision.kind === 'show-connect' && decision.initialPairingInput !== null)
@@ -43,7 +52,7 @@ function WebRoot(): React.JSX.Element {
       clearPairingInputFromAddressBar()
     }
     return decision
-  }, [initialPairingInput])
+  }, [accessToken, initialPairingInput])
   const [hasEnvironment, setHasEnvironment] = useState(() => {
     if (startupDecision.kind === 'auto-save-runtime-offer') {
       saveStoredWebRuntimeEnvironment(

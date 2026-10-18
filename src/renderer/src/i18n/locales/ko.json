@@ -360,13 +360,13 @@
     },
     "web": {
       "WebConnect": {
+        "tokenIntro": "Orca 서버가 출력한 액세스 토큰을 입력하거나 페어링 URL을 붙여넣으세요.",
+        "tokenLabel": "액세스 토큰 또는 페어링 URL",
+        "tokenPlaceholder": "액세스 토큰",
         "b411ec0069": "연결",
         "2cf9e5a294": "저장된 서버 지우기",
         "4a4c017be1": "엔드포인트:",
-        "27393856e4": "orca://pair?code=...",
-        "7a566540de": "페어링 URL 또는 코드",
         "cb4d287238": "서버 이름",
-        "3affe7de3a": "이 브라우저가 연결할 수 있는 Orca 서버의 페어링 URL을 붙여넣습니다.",
         "e3bcd082ac": "Orca에 연결",
         "mobileScopeRejected": "이 QR 코드는 제한된(모바일) 액세스 권한만 제공합니다. 전체 웹 앱을 사용하려면 설정 → 원격 Orca 서버 → 이 Orca 서버 공유 → 새 링크에서 브라우저 액세스 링크를 여세요."
       },

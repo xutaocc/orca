@@ -360,13 +360,13 @@
     },
     "web": {
       "WebConnect": {
+        "tokenIntro": "输入 Orca 服务器打印的访问令牌，或粘贴配对 URL。",
+        "tokenLabel": "访问令牌或配对 URL",
+        "tokenPlaceholder": "访问令牌",
         "b411ec0069": "连接",
         "2cf9e5a294": "清除已保存的服务器",
         "4a4c017be1": "端点：",
-        "27393856e4": "orca://pair?code=...",
-        "7a566540de": "配对 URL 或代码",
         "cb4d287238": "服务器名称",
-        "3affe7de3a": "粘贴来自该浏览器可以访问的 Orca 服务器的配对 URL。",
         "e3bcd082ac": "连接到 Orca",
         "mobileScopeRejected": "此二维码仅授予受限（移动端）访问权限。若要使用完整 Web 应用，请从设置 → 远程 Orca 服务器 → 分享此 Orca 服务器 → 新链接打开浏览器访问链接。"
       },

@@ -188,6 +188,11 @@ export class RuntimeRpcLifecycle extends RuntimeRpcWebSocketDispatch {
       host: options.host,
       port: options.port,
       staticRoot: this.webClientRoot,
+      // Fork (web server): lets a browser holding only a token build its pairing offer.
+      webAccessInfo: () => ({
+        publicKeyB64: e2eeKeypair.publicKeyB64,
+        ...(this.hostDescriptor ? { hostDescriptor: this.hostDescriptor } : {})
+      }),
       ...(options.fallbackPort !== undefined ? { fallbackPort: options.fallbackPort } : {}),
       ...(options.preferPinnedPort ? { preferPinnedPort: true } : {}),
       fallbackLadder: wsFallbackPortLadder(this.wsPort)

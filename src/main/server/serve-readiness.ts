@@ -34,6 +34,8 @@ export type ServeReadiness = {
    * parsing this payload is unaffected.
    */
   health?: OrcadHealth
+  /** Fork (web server): http(s) URL of the web client that a token alone opens, e.g. http://host:port/. */
+  webAccess?: { url: string; token: string }
 }
 
 export type ServeReadinessOutput =
@@ -114,6 +116,11 @@ function renderHumanReadiness(readiness: ServeReadiness): string {
     if (daemon.processCeiling !== undefined) {
       lines.push(`Terminal process ceiling: ${describePtyProcessCeiling(daemon.processCeiling)}`)
     }
+  }
+  if (readiness.webAccess) {
+    // Why human output only: the JSON payload is read by supervisors and must not leak the token.
+    lines.push(`Web access: ${readiness.webAccess.url}?token=${readiness.webAccess.token}`)
+    lines.push(`Web access token: ${readiness.webAccess.token}`)
   }
   if (readiness.pairing.available) {
     if (readiness.pairing.webClientUrl) {

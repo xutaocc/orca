@@ -206,6 +206,19 @@ export class RuntimeRpcPairing extends RuntimeRpcNetworkExposure {
     }
   }
 
+  /** Fork (web server): the fixed runtime token for `http://host:port/?token=…`; null when unavailable. */
+  ensureWebAccessToken(token: string | null): string | null {
+    if (!this.deviceRegistry) {
+      return null
+    }
+    try {
+      return this.deviceRegistry.ensureWebAccessDevice(token).token
+    } catch (error) {
+      console.error('[runtime] Failed to persist the web access token:', error)
+      return null
+    }
+  }
+
   protected queueOrRetainRelayDeviceRevoke(deviceId: string, binding: RelayDeviceBinding): void {
     if (this.queueRelayDeviceRevoke(binding)) {
       return

@@ -14,6 +14,8 @@ Options:
                            Use an SSH port-forward or a network IP for remote access.
   --pairing-address <addr> Address advertised in pairing offers when different
                            from the bind address (for example, a public hostname).
+  --token <token>          Fixed web access token for http://host:port/?token=<token>
+                           (default: ORCA_TOKEN, else a random one kept across restarts).
   --json                   Print the one-line server readiness JSON to stdout.
   --no-pairing             Do not create a client pairing offer at startup.
   --mobile-pairing         Create a mobile-scoped pairing offer with a QR code.
@@ -25,6 +27,7 @@ Options:
 
 Environment:
   ORCA_USER_DATA           Data directory for this instance's profile and state.
+  ORCA_TOKEN               Fixed web access token, when --token is not given.
 `
 
 type OrcadCommandArguments = OrcadOptions & { help?: boolean }
@@ -71,6 +74,13 @@ export function parseArgs(argv: string[]): OrcadCommandArguments {
         throw new Error('--bind expects a value')
       }
       options.bind = value
+      i += 1
+    } else if (arg === '--token') {
+      const value = argv[i + 1]?.trim()
+      if (!value) {
+        throw new Error('--token expects a value')
+      }
+      options.token = value
       i += 1
     } else if (arg === '--pairing-address') {
       const value = argv[i + 1]

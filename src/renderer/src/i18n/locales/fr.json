@@ -464,13 +464,13 @@
     },
     "web": {
       "WebConnect": {
+        "tokenIntro": "Saisissez le jeton d’accès affiché par le serveur Orca, ou collez une URL d’appairage.",
+        "tokenLabel": "Jeton d’accès ou URL d’appairage",
+        "tokenPlaceholder": "Jeton d’accès",
         "b411ec0069": "Se connecter",
         "2cf9e5a294": "Effacer le serveur enregistré",
         "4a4c017be1": "Point de terminaison :",
-        "27393856e4": "orca://pair?code=...",
-        "7a566540de": "URL ou code d'appairage",
         "cb4d287238": "Nom du serveur",
-        "3affe7de3a": "Collez une URL d'appairage provenant d'un serveur Orca accessible depuis ce navigateur.",
         "e3bcd082ac": "Se connecter à Orca",
         "mobileScopeRejected": "Ce code QR accorde un accès limité (mobile). Pour utiliser l'application web complète, ouvrez le lien d'accès navigateur depuis Paramètres → Environnements d'exécution → Partager ce serveur Orca → Nouveau lien."
       },

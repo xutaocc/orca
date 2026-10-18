@@ -12,6 +12,7 @@ import {
   saveStoredWebRuntimeEnvironment
 } from './web-runtime-environment'
 import { parseWebPairingInput } from './web-pairing'
+import { isWebAccessToken, resolveWebAccessTokenOffer } from './web-access-token'
 import { WebRuntimeClient } from './web-runtime-client'
 import type { RuntimeStatus } from '../../../shared/runtime-types'
 import { translate } from '@/i18n/i18n'
@@ -33,16 +34,27 @@ export default function WebConnect({
   const [error, setError] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
   const parsedOffer = useMemo(() => parseWebPairingInput(pairingCode), [pairingCode])
+  const accessToken = !parsedOffer && isWebAccessToken(pairingCode) ? pairingCode.trim() : null
   const autoConnectAttempted = useRef(false)
   const sessionGuidance = webSessionPairingGuidance(readWebDeviceKeySupport())
 
   const connect = async (): Promise<void> => {
     setError(null)
-    if (!parsedOffer) {
-      setError('Enter a valid Orca pairing URL or pairing code.')
+    let resolvedOffer = parsedOffer
+    if (!resolvedOffer && accessToken) {
+      try {
+        resolvedOffer = await resolveWebAccessTokenOffer(accessToken)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+        return
+      }
+    }
+    if (!resolvedOffer) {
+      setError('Enter an access token, or an Orca pairing URL or code.')
       return
     }
-    if (parsedOffer.scope === 'mobile') {
+    const offer = resolvedOffer
+    if (offer.scope === 'mobile') {
       setError(
         translate(
           'auto.web.WebConnect.mobileScopeRejected',
@@ -51,7 +63,7 @@ export default function WebConnect({
       )
       return
     }
-    if (isMixedContentWebSocket(parsedOffer.endpoint)) {
+    if (isMixedContentWebSocket(offer.endpoint)) {
       setError(
         'This HTTPS page cannot connect to a plain ws:// Orca server. Open the web client over HTTP or pair with a wss:// endpoint.'
       )
@@ -60,10 +72,10 @@ export default function WebConnect({
     setConnecting(true)
     const environment = createStoredWebRuntimeEnvironment({
       name,
-      offer: parsedOffer,
+      offer,
       previousEnvironment: existingEnvironment
     })
-    const client = new WebRuntimeClient(pairedRuntimeConnectionFromOffer(parsedOffer))
+    const client = new WebRuntimeClient(pairedRuntimeConnectionFromOffer(offer))
     try {
       const response = await client.call('status.get', undefined, { timeoutMs: 15_000 })
       if (!response.ok) {
@@ -97,14 +109,14 @@ export default function WebConnect({
   // Why: a deep-linked offer that reaches this screen either has mobile scope
   // or unknown legacy scope; run the same connect path to reject/probe it.
   useEffect(() => {
-    if (autoConnectAttempted.current || !initialPairingInput || !parsedOffer) {
+    if (autoConnectAttempted.current || !initialPairingInput || !(parsedOffer || accessToken)) {
       return
     }
     autoConnectAttempted.current = true
     void connect()
     // Why: run once for the deep-linked offer; connect() reads current refs/state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialPairingInput, parsedOffer])
+  }, [initialPairingInput, parsedOffer, accessToken])
 
   const clear = (): void => {
     clearStoredWebRuntimeEnvironment()
@@ -125,8 +137,8 @@ export default function WebConnect({
             </h1>
             <p className="mt-1 text-sm leading-5 text-muted-foreground">
               {translate(
-                'auto.web.WebConnect.3affe7de3a',
-                'Paste a pairing URL from an Orca server that this browser can reach.'
+                'auto.web.WebConnect.tokenIntro',
+                'Enter the access token printed by the Orca server, or paste a pairing URL.'
               )}
             </p>
           </div>
@@ -146,13 +158,19 @@ export default function WebConnect({
 
         <div className="grid gap-2">
           <Label htmlFor="web-runtime-pairing-code">
-            {translate('auto.web.WebConnect.7a566540de', 'Pairing URL or code')}
+            {translate('auto.web.WebConnect.tokenLabel', 'Access token or pairing URL')}
           </Label>
           <Input
             id="web-runtime-pairing-code"
             value={pairingCode}
             onChange={(event) => setPairingCode(event.target.value)}
-            placeholder={translate('auto.web.WebConnect.27393856e4', 'orca://pair?code=...')}
+            placeholder={translate('auto.web.WebConnect.tokenPlaceholder', 'Access token')}
+            type={accessToken ? 'password' : 'text'}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !connecting && (parsedOffer || accessToken)) {
+                void connect()
+              }
+            }}
             autoComplete="off"
             spellCheck={false}
           />
@@ -184,7 +202,7 @@ export default function WebConnect({
           <Button
             type="button"
             onClick={() => void connect()}
-            disabled={connecting || !parsedOffer}
+            disabled={connecting || !(parsedOffer || accessToken)}
             className="gap-2"
           >
             {connecting ? (

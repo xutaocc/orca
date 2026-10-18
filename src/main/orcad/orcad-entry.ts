@@ -58,6 +58,8 @@ export type OrcadOptions = {
   projectRoot?: string
   /** Literal IP to bind. Defaults to loopback; see orcad-bind-address.ts. */
   bind?: string
+  /** Fork (web server): fixed web access token (else ORCA_TOKEN, else a persisted random one). */
+  token?: string
 }
 
 export type OrcadHandle = {
@@ -316,10 +318,14 @@ async function startOrcadRuntime(
   getAppEnvironment().onWillQuit(() => pushService?.stop())
   console.error(`[orcad] ${describeOrcadBindExposure(bindHost)}`)
 
+  const webAccessToken = options.noPairing
+    ? null
+    : rpc.ensureWebAccessToken(options.token ?? process.env.ORCA_TOKEN?.trim() ?? null)
   const readiness = await buildOrcadServeReadiness({
     options,
     runtimeId: runtime.getRuntimeId(),
     rpc,
+    webAccessToken,
     collectHealth: () =>
       collectOrcadHealth(
         getAppEnvironment().getVersion(),

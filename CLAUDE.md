@@ -31,7 +31,13 @@ pnpm run check:code-quality:changed  # changed-lines lint gate (full `pnpm lint`
 pnpm format                        # oxfmt
 ```
 
-`serve-web.sh` sets `ORCA_ORCAD_NO_ELECTRON=1`, `ORCA_WEB_CLIENT_ROOT=out/web` and `ORCA_ALLOW_INSECURE_WEB_PAIRING=1` (allows pairing from `http://<LAN IP>`), and auto-detects Chrome/Edge for the agent browser (`ORCA_BROWSER_EXECUTABLE`). It is a bash script with macOS/Linux LAN-IP detection; `serve-web.ps1` is the Windows equivalent. orcad prints a `Web client URL:` with a `#pairing=` fragment — open that exact URL; the bare page has no credentials. The web client dials back whichever host served the page (`followPageHostEndpoint` in `src/renderer/src/web/web-pairing.ts`), so the same link works with any of the machine's addresses (LAN, Tailscale, ZeroTier) or behind an https proxy. Unlike upstream, a pairing opened over plain http from another machine is kept in localStorage (`isSessionOnlyBrowser` in `web-runtime-environment.ts`), so reloads and browser restarts stay connected.
+`serve-web.sh` sets `ORCA_ORCAD_NO_ELECTRON=1`, `ORCA_WEB_CLIENT_ROOT=out/web` and `ORCA_ALLOW_INSECURE_WEB_PAIRING=1` (allows pairing from `http://<LAN IP>`), and auto-detects Chrome/Edge for the agent browser (`ORCA_BROWSER_EXECUTABLE`). It is a bash script with macOS/Linux LAN-IP detection; `serve-web.ps1` is the Windows equivalent.
+
+### Token access (fork)
+
+orcad prints `Web access: http://<host>:<port>/?token=<token>`. The token is a runtime device row named `Web access token` (`src/main/runtime/web-access-device.ts`), fixed via `--token` / `ORCA_TOKEN`, otherwise random and kept across restarts. Opening `http://<host>:<port>/` without a token shows the connect form, which accepts the token. The browser builds the pairing offer itself from `/orca-web-access.json` (host E2EE public key, no secrets; `src/main/runtime/rpc/web-access-info-handler.ts`) and dials the page's own host, so any address works. The `#pairing=` links still work.
+
+orcad also prints a `Web client URL:` with a `#pairing=` fragment. The web client dials back whichever host served the page (`followPageHostEndpoint` in `src/renderer/src/web/web-pairing.ts`), so the same link works with any of the machine's addresses (LAN, Tailscale, ZeroTier) or behind an https proxy. Unlike upstream, a pairing opened over plain http from another machine is kept in localStorage (`isSessionOnlyBrowser` in `web-runtime-environment.ts`), so reloads and browser restarts stay connected.
 
 ### Building on Windows
 

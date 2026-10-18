@@ -528,13 +528,13 @@
     },
     "web": {
       "WebConnect": {
+        "tokenIntro": "Enter the access token printed by the Orca server, or paste a pairing URL.",
+        "tokenLabel": "Access token or pairing URL",
+        "tokenPlaceholder": "Access token",
         "b411ec0069": "Connect",
         "2cf9e5a294": "Clear saved server",
         "4a4c017be1": "Endpoint:",
-        "27393856e4": "orca://pair?code=...",
-        "7a566540de": "Pairing URL or code",
         "cb4d287238": "Server name",
-        "3affe7de3a": "Paste a pairing URL from an Orca server that this browser can reach.",
         "e3bcd082ac": "Connect to Orca",
         "mobileScopeRejected": "This QR code grants limited (mobile) access. To use the full web app, open the browser access link from Settings → Runtime Environments → Share this Orca server → New Link."
       },

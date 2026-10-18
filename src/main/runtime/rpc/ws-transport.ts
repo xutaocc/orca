@@ -4,6 +4,8 @@ import { createServer as createHttpServer, type Server as HttpServer } from 'nod
 import { WebSocketServer, type WebSocket } from 'ws'
 import type { RpcTransport } from './transport'
 import { createStaticWebClientHandler } from './static-web-client-handler'
+import { handleWebAccessInfoRequest } from './web-access-info-handler'
+import type { WebAccessInfo } from '../../../shared/web-access-info'
 import { hasWebClientUpgradeMarker } from '../../../shared/web-origin-security'
 import {
   attachNodeWebSocketLifecycle,
@@ -39,6 +41,8 @@ export type WebSocketTransportOptions = {
   preAuthTimeoutMs?: number
   // Why: the pairing server can also serve the browser client, avoiding a second static server.
   staticRoot?: string
+  // Fork (web server): public pairing fields for token-only browser access.
+  webAccessInfo?: () => WebAccessInfo | null
   // Why: devices paired while the fallback port was active point at it, so it must bind first on later launches or those pairings strand (STA-1511).
   fallbackPort?: number
   // Why: serve --port clients dial the pinned port; prefer it first so a stale fallback can't steal the pin (issue #8535). Default keeps fallback-first (STA-1511).
@@ -55,6 +59,7 @@ export class WebSocketTransport implements RpcTransport {
   private readonly heartbeat: RemoteRuntimeServerHeartbeat
   private readonly preAuthTimeoutMs: number
   private readonly staticRoot: string | undefined
+  private readonly webAccessInfo: (() => WebAccessInfo | null) | undefined
   private readonly fallbackPort: number | undefined
   private readonly preferPinnedPort: boolean
   private readonly fallbackLadder: readonly number[]
@@ -78,6 +83,7 @@ export class WebSocketTransport implements RpcTransport {
     heartbeatNow,
     preAuthTimeoutMs,
     staticRoot,
+    webAccessInfo,
     fallbackPort,
     preferPinnedPort,
     fallbackLadder
@@ -93,6 +99,7 @@ export class WebSocketTransport implements RpcTransport {
     )
     this.preAuthTimeoutMs = preAuthTimeoutMs ?? PRE_AUTH_TIMEOUT_MS
     this.staticRoot = staticRoot
+    this.webAccessInfo = webAccessInfo
     this.fallbackPort = fallbackPort
     this.preferPinnedPort = preferPinnedPort === true
     this.fallbackLadder = fallbackLadder ?? []
@@ -192,9 +199,18 @@ export class WebSocketTransport implements RpcTransport {
   }
 
   private createHttpServer(): HttpServer | HttpsServer {
-    const requestListener = this.staticRoot
+    const staticListener = this.staticRoot
       ? createStaticWebClientHandler(this.staticRoot)
       : undefined
+    const readInfo = this.webAccessInfo
+    const requestListener: typeof staticListener =
+      staticListener && readInfo
+        ? (request, response) => {
+            if (!handleWebAccessInfoRequest(request, response, readInfo)) {
+              staticListener(request, response)
+            }
+          }
+        : staticListener
     return this.tlsCert && this.tlsKey
       ? createHttpsServer({ cert: this.tlsCert, key: this.tlsKey }, requestListener)
       : createHttpServer(requestListener)

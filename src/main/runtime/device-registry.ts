@@ -10,6 +10,7 @@ import { DEVICE_REGISTRY_FILENAME } from './mobile-pairing-files'
 import { mintDeviceCredential } from './device-credential'
 import { planDeviceKeyFork } from './device-key-fork'
 import { planIdleEphemeralPrune, withoutEphemeralRows } from './ephemeral-device-rows'
+import { planWebAccessDevice } from './web-access-device'
 import { quarantineCorruptRegistry } from './device-registry-corruption'
 import { readDeviceRegistryFile } from './device-registry-file-read'
 import type { RelayDeviceBinding } from './relay/relay-revoke-outbox'
@@ -91,8 +92,7 @@ export class DeviceRegistry {
     }
     const nextDevices = [...existingDevices, entry]
     // Why: a credential is not valid until its durable registry write succeeds.
-    this.save(nextDevices)
-    this.devices = nextDevices
+    this.commit(nextDevices)
     return entry
   }
 
@@ -159,11 +159,15 @@ export class DeviceRegistry {
     phones: readonly DelegatedPhone[]
   ): DelegatedMobileDeviceEntry[] {
     const { nextDevices, entries } = planDelegatedMobileDevices(this.devices, parent, phones)
-    if (nextDevices !== this.devices) {
-      this.save(nextDevices)
-      this.devices = nextDevices
-    }
+    this.commit(nextDevices !== this.devices ? nextDevices : null)
     return entries
+  }
+
+  /** Fork (web server): see planWebAccessDevice. Durable: changing the token is a revocation. */
+  ensureWebAccessDevice(token: string | null): TokenDeviceEntry {
+    const plan = planWebAccessDevice(this.devices, token, Date.now())
+    this.commit(plan.nextDevices, { durable: true })
+    return plan.entry
   }
 
   removeDevice(deviceId: string): boolean {
@@ -171,10 +175,7 @@ export class DeviceRegistry {
     if (nextDevices.length === this.devices.length) {
       return false
     }
-    // Why: persist before memory swap so a failed write does not drop a device
-    // only in-process while disk still lists it (and vice versa on reload).
-    this.save(nextDevices)
-    this.devices = nextDevices
+    this.commit(nextDevices)
     return true
   }
 
@@ -253,20 +254,14 @@ export class DeviceRegistry {
       Date.now(),
       options
     )
-    if (fork.created) {
-      this.save(fork.nextDevices, { durable: true })
-      this.devices = fork.nextDevices
-    }
+    this.commit(fork.created ? fork.nextDevices : null, { durable: true })
     return fork.entry
   }
 
   /** Drops idle session-only rows; durable, since a removed row is a revocation. */
   pruneIdleEphemeralDevices(now: number, isLive: (deviceId: string) => boolean): string[] {
     const plan = planIdleEphemeralPrune(this.devices, now, isLive)
-    if (plan.removed.length > 0) {
-      this.save(plan.nextDevices, { durable: true })
-      this.devices = plan.nextDevices
-    }
+    this.commit(plan.removed.length > 0 ? plan.nextDevices : null, { durable: true })
     return plan.removed
   }
 
@@ -346,6 +341,13 @@ export class DeviceRegistry {
   }
 
   // Why: persist before the memory swap so a failed write never leaves memory claiming what disk lacks.
+  private commit(nextDevices: DeviceEntry[] | null, options: { durable?: boolean } = {}): void {
+    if (nextDevices) {
+      this.save(nextDevices, options)
+      this.devices = nextDevices
+    }
+  }
+
   private replaceRow(deviceId: string, update: (device: DeviceEntry) => DeviceEntry): boolean {
     const index = this.devices.findIndex((candidate) => candidate.deviceId === deviceId)
     if (index === -1) {
@@ -354,8 +356,7 @@ export class DeviceRegistry {
     const nextDevices = this.devices.map((device, candidateIndex) =>
       candidateIndex === index ? update(device) : device
     )
-    this.save(nextDevices)
-    this.devices = nextDevices
+    this.commit(nextDevices)
     return true
   }
 
