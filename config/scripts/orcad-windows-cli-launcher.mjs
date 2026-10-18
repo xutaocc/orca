@@ -12,12 +12,20 @@ export function orcadWindowsCliLauncherSource(root, arch) {
   return join(root, '.build', 'windows-cli-launcher', arch, 'orca.exe')
 }
 
-/** A Windows slot's `orca` command; a Windows build host compiles a missing one. */
+/**
+ * A Windows slot's `orca` command; a Windows build host compiles a missing one.
+ *
+ * Fork note (web server): a Windows host without Rust skips the launcher instead of failing.
+ * orcad starts without it (prepareOrcadCliLauncher returns null), so the web UI and its
+ * terminals work; only typing `orca ...` inside Orca terminals (and agent skills that call it:
+ * orchestration, agent browser, worktree commands) is unavailable. Install Rust and rebuild to
+ * restore it.
+ */
 export function stageOrcadWindowsCliLauncher(
   root,
   outputDir,
   target,
-  host = { platform: process.platform },
+  host = { platform: process.platform, hasCargo: hostHasCargo },
   compile = compileOrcadWindowsCliLauncher
 ) {
   if (!target.startsWith('win32-')) {
@@ -32,6 +40,14 @@ export function stageOrcadWindowsCliLauncher(
           `node config/scripts/build-windows-cli-launcher.mjs --arch ${arch} --output ${source}`
       )
     }
+    if (host.hasCargo && !host.hasCargo()) {
+      console.warn(
+        `[build-orcad] cargo not found: skipping the ${target} \`orca\` CLI launcher. ` +
+          'The web UI and terminals work; `orca ...` inside Orca terminals will not. ' +
+          'Install Rust (https://rustup.rs) and rebuild to include it.'
+      )
+      return
+    }
     compile(root, arch, source)
   }
   const machine = readPeMachine(source)
@@ -41,6 +57,14 @@ export function stageOrcadWindowsCliLauncher(
   const destination = join(outputDir, ...ORCAD_WINDOWS_CLI_LAUNCHER_FILENAME.split('/'))
   mkdirSync(dirname(destination), { recursive: true })
   copyFileSync(source, destination)
+}
+
+function hostHasCargo() {
+  try {
+    return runProcessSync({ program: 'cargo', args: ['--version'], timeoutMs: 30_000 }).code === 0
+  } catch {
+    return false
+  }
 }
 
 function compileOrcadWindowsCliLauncher(root, arch, output) {

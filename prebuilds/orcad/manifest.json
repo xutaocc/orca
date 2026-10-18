@@ -26,6 +26,19 @@
         "pty.node": "1e0f114a98abb37254659758a2e4ed7c0c2e8363655fd4d58bc2354fae2ddefc",
         "spawn-helper": "41f5ccabfd9cfecb9a519966a94abf343b45017c476e5a75a889308b0d9e9a77"
       }
+    },
+    "win32-x64": {
+      "platform": "win32",
+      "arch": "x64",
+      "libc": "none",
+      "glibc": null,
+      "napi": 8,
+      "files": {
+        "conpty.node": "bf2544dedd6dca37a6cd45aa3e4e3cf0ed30787daa36c437ec18f73862a7a881",
+        "conpty_console_list.node": "879dd94cfc79f1e263a00077597ae9448a5394b7d193381aaa50d992a1f91090",
+        "conpty/conpty.dll": "7c7430632052ff703540b68371ec43821820aa1335d8e11dfbcd9ff00e9daaed",
+        "conpty/OpenConsole.exe": "d1fe7faa62f9e955e2ac2371f95d7e5513df4d496255097158f979c94782c5fc"
+      }
     }
   }
 }

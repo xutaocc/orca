@@ -208,13 +208,23 @@ export function orcadArtifactFilenames(target: string): string[] {
   )
   filenames.push(...orcadNodePtyNativeArtifacts(target), orcadRipgrepArtifact(target))
   if (isWindowsTarget(target)) {
-    filenames.push(
-      ORCAD_WINDOWS_PROCESS_TREE_FILENAME,
-      ORCAD_WINDOWS_SECURITY_FILENAME,
-      ORCAD_WINDOWS_CLI_LAUNCHER_FILENAME
-    )
+    filenames.push(ORCAD_WINDOWS_PROCESS_TREE_FILENAME, ORCAD_WINDOWS_SECURITY_FILENAME)
   }
   return filenames
+}
+
+/**
+ * Hashed after the required artifacts only when present.
+ * Fork note (web server): a Windows build host without Rust omits `bin/orca.exe`; orcad still
+ * serves the web UI and terminals, only the in-terminal `orca` command is missing.
+ */
+export function orcadOptionalArtifactFilenames(target: string): string[] {
+  return isWindowsTarget(target) ? [ORCAD_WINDOWS_CLI_LAUNCHER_FILENAME] : []
+}
+
+/** Packaged templates and SSH installs are built where Rust exists, so they always carry them. */
+export function orcadPackagedArtifactFilenames(target: string): string[] {
+  return [...orcadArtifactFilenames(target), ...orcadOptionalArtifactFilenames(target)]
 }
 
 /** Files shared by every template target; the rest live under `targets/<target>/`. */
@@ -231,5 +241,5 @@ export function orcadTemplateCommonFilenames(): string[] {
 /** Files stored under the template's `targets/<target>/`, at their slot-relative paths. */
 export function orcadTemplateTargetFilenames(target: string): string[] {
   const common = new Set(orcadTemplateCommonFilenames())
-  return orcadArtifactFilenames(target).filter((filename) => !common.has(filename))
+  return orcadPackagedArtifactFilenames(target).filter((filename) => !common.has(filename))
 }

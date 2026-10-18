@@ -36,6 +36,9 @@ native/windows-registry/bin/
 native/windows-security/build/
 native/windows-security/bin/
 .build/windows-security/
+# Fork (web server): commit the built Windows addons so a Windows host needs no C++ toolchain.
+!.build/windows-security/
+.build/windows-security/*/gyp/
 
 # pnpm
 .pnpm-store/

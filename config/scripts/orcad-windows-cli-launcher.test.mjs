@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -59,6 +59,23 @@ it('refuses a missing launcher off Windows and compiles it on Windows', () => {
   stageOrcadWindowsCliLauncher(root, output, 'win32-x64', { platform: 'win32' }, compile)
   expect(compile).toHaveBeenCalledWith(root, 'x64', orcadWindowsCliLauncherSource(root, 'x64'))
   expect(readFileSync(join(output, 'bin', 'orca.exe'))).toEqual(peImage(0x8664))
+})
+
+it('skips a missing launcher on a Windows host without cargo', () => {
+  const { root, output } = fixture()
+  const compile = vi.fn()
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  stageOrcadWindowsCliLauncher(
+    root,
+    output,
+    'win32-x64',
+    { platform: 'win32', hasCargo: () => false },
+    compile
+  )
+  expect(compile).not.toHaveBeenCalled()
+  expect(existsSync(join(output, 'bin', 'orca.exe'))).toBe(false)
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining('cargo not found'))
+  warn.mockRestore()
 })
 
 it('ignores POSIX targets', () => {

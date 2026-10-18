@@ -15,13 +15,15 @@ import {
   orcadArtifactFilenames,
   orcadBunRuntimeFilename,
   orcadNodeRuntimeRelativePath,
+  orcadOptionalArtifactFilenames,
   orcadTemplateCommonFilenames,
   orcadTemplateTargetFilenames
 } from './orcad-artifacts'
 
 describe('standalone runtime artifacts', () => {
   it.each(SERVER_TARGETS)('ships the native CLI launcher only in Windows %s slots', (target) => {
-    expect(orcadArtifactFilenames(target).includes(ORCAD_WINDOWS_CLI_LAUNCHER_FILENAME)).toBe(
+    expect(orcadArtifactFilenames(target)).not.toContain(ORCAD_WINDOWS_CLI_LAUNCHER_FILENAME)
+    expect(orcadOptionalArtifactFilenames(target).includes(ORCAD_WINDOWS_CLI_LAUNCHER_FILENAME)).toBe(
       target.startsWith('win32-')
     )
     expect(orcadTemplateCommonFilenames()).not.toContain(ORCAD_WINDOWS_CLI_LAUNCHER_FILENAME)

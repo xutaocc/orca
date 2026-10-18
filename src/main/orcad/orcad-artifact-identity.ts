@@ -6,7 +6,8 @@ import { z } from 'zod'
 import {
   ORCAD_SERVER_TARGET_FILENAME,
   ORCAD_VERSION,
-  orcadArtifactFilenames
+  orcadArtifactFilenames,
+  orcadOptionalArtifactFilenames
 } from '../../shared/orcad-artifacts'
 import { COMPAT_SERVER_TARGETS, SERVER_TARGETS } from '../../shared/node-runtime-pin'
 import { orcadAgentBrowserNativeName } from '../../shared/orcad-agent-browser-name'
@@ -27,8 +28,10 @@ export async function readOrcadArtifactIdentity(directory: string): Promise<stri
     target.endsWith('-musl') ? 'musl' : 'glibc'
   )
   const filenames = orcadArtifactFilenames(target)
-  if (existsSync(join(directory, browser))) {
-    filenames.push(browser)
+  for (const optional of [...orcadOptionalArtifactFilenames(target), browser]) {
+    if (existsSync(join(directory, optional))) {
+      filenames.push(optional)
+    }
   }
   const hash = createHash('sha256')
   for (const filename of filenames) {

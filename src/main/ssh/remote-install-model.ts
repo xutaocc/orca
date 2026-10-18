@@ -21,7 +21,7 @@ import {
   RELAY_VERSION_FILENAME
 } from './relay-install-artifacts'
 import {
-  orcadArtifactFilenames,
+  orcadPackagedArtifactFilenames,
   ORCAD_INSTALL_COMPLETE_FILENAME,
   ORCAD_RUNTIMES_DIRNAME,
   ORCAD_VERSION_FILENAME
@@ -58,7 +58,7 @@ export const ORCAD_INSTALL_MODEL: RemoteInstallModel = {
   versionFilename: ORCAD_VERSION_FILENAME,
   installCompleteFilename: ORCAD_INSTALL_COMPLETE_FILENAME,
   // libc changes no file name, so `<os>-<arch>` names every slot file.
-  requiredArtifacts: (host) => orcadArtifactFilenames(`${host.os}-${host.arch}`)
+  requiredArtifacts: (host) => orcadPackagedArtifactFilenames(`${host.os}-${host.arch}`)
 }
 
 export const REMOTE_INSTALL_MODELS: readonly RemoteInstallModel[] = [

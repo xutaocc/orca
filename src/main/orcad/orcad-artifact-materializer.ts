@@ -11,7 +11,7 @@ import {
   ORCAD_TEMPLATE_MANIFEST_FILENAME,
   ORCAD_TEMPLATE_TARGETS_DIR,
   ORCAD_VERSION_FILENAME,
-  orcadArtifactFilenames,
+  orcadPackagedArtifactFilenames,
   orcadTemplateCommonFilenames,
   orcadTemplateTargetFilenames
 } from '../../shared/orcad-artifacts'
@@ -185,7 +185,7 @@ function artifactSources(
     throw new OrcadHostUnsupportedError(`Packaged orcad template does not support ${target}`)
   }
   const targetFiles = new Set(orcadTemplateTargetFilenames(target))
-  const required = orcadArtifactFilenames(target).map((filename) => ({
+  const required = orcadPackagedArtifactFilenames(target).map((filename) => ({
     filename,
     path: join(targetFiles.has(filename) ? targetDir : templateDir, ...filename.split('/')),
     executable: isExecutableArtifact(filename)
