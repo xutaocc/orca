@@ -31,15 +31,15 @@ export function webPairingSecurityGuidance(
       )
 }
 
-/** Shown before and after pairing when this browser can only pair for the current tab. */
+/** Shown before and after pairing when this browser holds its pairing in a weaker form. */
 export function webSessionPairingGuidance(support: WebDeviceKeySupport | null): string | null {
   if (!support || support === 'persistent') {
     return null
   }
   return support === 'session-insecure-origin'
     ? translate(
-        'auto.web.pairingSecurity.sessionInsecureOrigin',
-        'This pairing lasts only while this tab is open, because this page is plain http on another machine. For a pairing this browser remembers, open Orca over https, at localhost on this computer, or through an SSH tunnel.'
+        'auto.web.pairingSecurity.storedCodeInsecureOrigin',
+        'This browser keeps a reusable pairing code, because this page is plain http on another machine. Anyone who can read this browser’s storage could use it. For a safer pairing, open Orca over https, at localhost on this computer, or through an SSH tunnel, and pair again.'
       )
     : translate(
         'auto.web.pairingSecurity.sessionNoEd25519',

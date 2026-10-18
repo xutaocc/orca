@@ -257,7 +257,12 @@ export function replaceStoredTokenWithDeviceKey(
   return next
 }
 
+/**
+ * Fork note (web server): pairings opened over plain http on another machine (LAN, Tailscale)
+ * are stored in localStorage like any other, so a reload keeps working; upstream kept them in
+ * memory only. Browsers without Ed25519 on a secure page still pair for the tab only.
+ */
 function isSessionOnlyBrowser(): boolean {
   const support = readWebDeviceKeySupport()
-  return support !== null && support !== 'persistent'
+  return support === 'session-no-ed25519'
 }
